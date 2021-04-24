@@ -21,17 +21,14 @@ export class GoogleUploadService {
     @InjectRepository(TaqueriaRepository)
     private TaqueriaRepository: TaqueriaRepository,
   ) {}
-  private googleService = new Storage({
-    projectId: 'grandmasrecipes',
-    keyFilename,
-  });
+  private googleService = new Storage();
 
   async createTacoImage(
     id: number,
     @UploadedFile() file: Express.Multer.File,
     user: User,
   ): Promise<string> {
-    const tacoBucket = this.googleService.bucket('mi-taqueria-dev');
+    const tacoBucket = this.googleService.bucket('mitaqueriadev');
     const originaName = file.originalname.split('.');
     const fileName = `${originaName[0]}_${moment(new Date()).format(
       'MMDDYYYY_HH:mm:ss',
@@ -39,6 +36,7 @@ export class GoogleUploadService {
     const blob = tacoBucket.file(fileName);
     const blobStream = blob.createWriteStream();
     blobStream.on('error', err => {
+      console.log(err);
       throw new HttpException(
         {
           status: HttpStatus.FORBIDDEN,
