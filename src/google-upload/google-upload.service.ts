@@ -11,8 +11,11 @@ import { Storage } from '@google-cloud/storage';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TaqueriaRepository } from 'src/taqueria/taqueria.repository';
 import { User } from 'src/auth/user.entity';
-const keyFilename = './config/grandmasRecipes-49091d2bc82f.json';
+const keyFilename = './config/gcloud.json';
+import * as config from 'config';
+import { GoogleFiles } from './google-upload.entity';
 
+const gCloudConfig = config.get('gcloud');
 @Injectable()
 export class GoogleUploadService {
   constructor(
@@ -21,14 +24,19 @@ export class GoogleUploadService {
     @InjectRepository(TaqueriaRepository)
     private TaqueriaRepository: TaqueriaRepository,
   ) {}
-  private googleService = new Storage();
+  private googleService = new Storage({
+    projectId: gCloudConfig.GCLOUD_PROJECT_ID,
+    keyFilename,
+  });
 
   async createTacoImage(
     id: number,
     @UploadedFile() file: Express.Multer.File,
     user: User,
-  ): Promise<string> {
-    const tacoBucket = this.googleService.bucket('mitaqueriadev');
+  ): Promise<GoogleFiles> {
+    const tacoBucket = this.googleService.bucket(
+      gCloudConfig.GCLOUD_STORAGE_BUCKET,
+    );
     const originaName = file.originalname.split('.');
     const fileName = `${originaName[0]}_${moment(new Date()).format(
       'MMDDYYYY_HH:mm:ss',
@@ -36,7 +44,6 @@ export class GoogleUploadService {
     const blob = tacoBucket.file(fileName);
     const blobStream = blob.createWriteStream();
     blobStream.on('error', err => {
-      console.log(err);
       throw new HttpException(
         {
           status: HttpStatus.FORBIDDEN,
@@ -84,7 +91,7 @@ export class GoogleUploadService {
     // If image is found in Postgres db, then initiate the delete from GoogleCloud
     try {
       this.googleService
-        .bucket('mi-taqueria-dev')
+        .bucket(gCloudConfig.GCLOUD_STORAGE_BUCKET)
         .file(foundFileMeta.fileName)
         .delete();
     } catch (error) {
