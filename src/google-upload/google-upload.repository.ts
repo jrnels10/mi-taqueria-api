@@ -28,7 +28,6 @@ export class GoogleUploadRepository extends Repository<GoogleFiles> {
 
     delete photo.user;
     delete photo.taqueria;
-    console.log(photo);
     return photo;
   }
 }
