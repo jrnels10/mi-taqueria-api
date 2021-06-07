@@ -11,13 +11,17 @@ import { Storage } from '@google-cloud/storage';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TaqueriaRepository } from 'src/taqueria/taqueria.repository';
 import { User } from 'src/auth/user.entity';
-const keyFilename = './config/gcloud.json';
+const keyFilename =
+  process.env.NODE_ENV === 'production'
+    ? process.env.GCLOUD_PROJECT
+    : './config/gcloud.json';
 import * as config from 'config';
 import { GoogleFiles } from './google-upload.entity';
 import * as sharp from 'sharp';
-import stream, { Stream } from 'stream';
+import { Stream } from 'stream';
 
-const gCloudConfig = config.get('gcloud');
+const gCloudConfig =
+  process.env.NODE_ENV === 'production' ? null : config.get('gcloud');
 @Injectable()
 export class GoogleUploadService {
   constructor(
@@ -27,7 +31,7 @@ export class GoogleUploadService {
     private TaqueriaRepository: TaqueriaRepository,
   ) {}
   private googleService = new Storage({
-    projectId: gCloudConfig.GCLOUD_PROJECT_ID,
+    projectId: process.env.GCLOUD_PROJECT_ID || gCloudConfig.GCLOUD_PROJECT_ID,
     keyFilename,
   });
 
@@ -42,7 +46,9 @@ export class GoogleUploadService {
       'MMDDYYYY_HH:mm:ss',
     )}.${originaName[1]}`;
     const gcFile = this.googleService
-      .bucket(gCloudConfig.GCLOUD_STORAGE_BUCKET)
+      .bucket(
+        process.env.GCLOUD_STORAGE_BUCKET || gCloudConfig.GCLOUD_STORAGE_BUCKET,
+      )
       .file(fileName);
     dataStream.push(file.buffer);
     dataStream.push(null);
@@ -62,7 +68,9 @@ export class GoogleUploadService {
             reject(error);
           })
           .on('finish', () => {
-            const publicUrl = `https://storage.googleapis.com/${gCloudConfig.GCLOUD_STORAGE_BUCKET}/${fileName}`;
+            const publicUrl = `https://storage.googleapis.com/${process.env
+              .GCLOUD_STORAGE_BUCKET ||
+              gCloudConfig.GCLOUD_STORAGE_BUCKET}/${fileName}`;
             gcFile.makePublic();
             resolve(publicUrl);
           });
