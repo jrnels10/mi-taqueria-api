@@ -7,9 +7,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmConfig } from './config/typeorm.config';
 import { AuthController } from './auth/auth.controller';
 import { GoogleUploadModule } from './google-upload/google-upload.module';
-
+console.log(typeOrmConfig);
 @Module({
-  imports: [TaqueriaModule, AuthModule, TypeOrmModule.forRoot(typeOrmConfig), GoogleUploadModule],
+  imports: [
+    TaqueriaModule,
+    AuthModule,
+    TypeOrmModule.forRoot(typeOrmConfig),
+    GoogleUploadModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
